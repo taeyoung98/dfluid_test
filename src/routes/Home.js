@@ -42,8 +42,8 @@ const Bottom = styled.div`
   width: 100%;
   height: 740px;
 	background-image: url(${props => props.url});
-	// background-size: cover;
-	// background-position: center;
+	background-size: cover;
+	background-position: center;
   display: flex;
   align-items: center;
   text-align: center;
@@ -75,13 +75,9 @@ const Bottom = styled.div`
   }
 `;
 
-// 1. urls 종류 정하기
-// 2. (한 개만 불러와서) 사진 고정하기
-// 3. https://github.com/unsplash/unsplash-js 방법으로 전환
-
 const Home = () => {
 	const { data: { profileList, main } } = data;
-	const [ imgUrl, setImgUrl ] = useState("");
+	const [imgUrl, setImgUrl] = useState("");
 
 	// profileList 순서 무작위로 변경
 	const shuffle = (arr) => {
@@ -99,7 +95,6 @@ const Home = () => {
 				.get("https://api.unsplash.com/photos/random", {
 					params: {
 						client_id: "RfZSbn_rdvEPrnhslq8HRwmCwyayZg3DBo_LDcXXaTM"
-						// count: "1"
 					},
 					headers: {
 						// Access key
@@ -107,39 +102,47 @@ const Home = () => {
 					}
 				});
 			
-			// const image = await response.data.urls.raw;
-
 			setImgUrl(response.data.urls.raw); // raw full regular small thumb
 		}
 		catch (err) {
 			console.error(err.message);
 		}
-	}, [setImgUrl]);
+	}, []);
 	// useCallback : params가 바뀔 때만 getImage가 실행되어, 불필요한 함수 생성 및 실행 방지
 
 	useEffect(() => {
-		getImage();
-	}, [getImage]);
-	// [getImage, setImgUrl] : 컴포넌트가 리렌더링 될 때마다, 계속해서 getImage를 만들고, 새로운 참조값을 받기 때문에 getImage()를 실행한다. 
+		// localStorage: 동일한 pc 안에서 동일한 브라우저 사용할 때. 데이터 직접 삭제하지 않는 한, 브라우저 닫아도 저장된 데이터 호출 가능
+		// sessionStorage: 브라우저 창 닫으면 세션 종료되면서 storage에 저장된 데이터도 소멸
+		const value = localStorage.getItem("imgUrl");
+
+		if (value === null || value === "") {
+			getImage();
+			localStorage.setItem("imgUrl", imgUrl);
+			
+		} else { // 기존에 이미지가 있다면
+			setImgUrl(value);
+		}
+	}, [getImage, imgUrl]);
+	// [getImage, imgUrl] : 컴포넌트가 리렌더링 될 때마다, 계속해서 getImage를 만들고, 새로운 참조값을 받기 때문에 getImage()를 실행한다. 
 
   return(
-    <Container>
-      <Top>
-        <h1>Snap photos and share like<br />never before</h1>
-        <Profile>
-          {profileList.map((item, index) => (
-            <Card key={index} src={item.src} name={item.name} desc={item.description} />
-          ))}
-        </Profile>
-      </Top>
-      <Bottom url={imgUrl}>
-        <div className="inner">
-          <h3 className="title font-title">{main.title}</h3>
-          <p className="desc font-desc">{main.contents}</p>
-          <p className="sub">{main.sub}</p>
-        </div>
-      </Bottom>
-    </Container>
+	<Container>
+		<Top>
+			<h1>Snap photos and share like<br />never before</h1>
+			<Profile>
+				{profileList.map((item, index) => (
+					<Card key={index} src={item.src} name={item.name} desc={item.description} />
+				))}
+			</Profile>
+		</Top>
+		<Bottom url={imgUrl}>
+			<div className="inner">
+				<h3 className="title font-title">{main.title}</h3>
+				<p className="desc font-desc">{main.contents}</p>
+				<p className="sub">{main.sub}</p>
+			</div>
+		</Bottom>
+	</Container>
   );
 }
 
